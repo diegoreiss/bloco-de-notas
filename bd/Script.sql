@@ -1,6 +1,16 @@
+CREATE TABLE IF NOT EXISTS categoria(
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    nome VARCHAR(30) NOT NULL
+    cor VARCHAR(30) NULL
+)
+
 CREATE TABLE IF NOT EXISTS nota(
 	id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
 	nome VARCHAR(60) NOT NULL,
 	data DATE NOT NULL,
-	texto TEXT NOT NULL
+	texto TEXT NOT NULL,
+    categoria_id INTEGER,
+    CONSTRAINT fk_nota_categoria
+        FOREIGN KEY(categoria_id)
+        REFERENCES categoria(id)
 );
