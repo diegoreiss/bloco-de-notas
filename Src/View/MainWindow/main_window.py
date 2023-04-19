@@ -103,8 +103,6 @@ class MainWindow(QMainWindow):
         else:
             self.nota.categoria_id = None
 
-        print(self.nota.__dict__)
-
     def limpar_campos(self):
         for widget in self.container.children():
             if isinstance(widget, QLineEdit):
@@ -114,7 +112,7 @@ class MainWindow(QMainWindow):
             elif isinstance(widget, QComboBox):
                 widget.setCurrentIndex(0)
 
-    def carrega_dados(self, row, column):
+    def carrega_dados(self, row):
         self.txt_id.setText(self.tabela_nota.item(row, 0).text())
         self.txt_titulo_nota.setText(self.tabela_nota.item(row, 1).text())
         self.txt_nota.setText(self.tabela_nota.item(row, 3).text())
@@ -188,23 +186,19 @@ class MainWindow(QMainWindow):
         nota_dao = NotaDAO()
         lista_notas = nota_dao.consultar_todas_notas()
 
-        for tupla in lista_notas:
-            print(self.categorias[tupla[-1]]['cor'])
-
         self.tabela_nota.setRowCount(len(lista_notas))
 
         for linha, nota in enumerate(lista_notas):
             categoria = nota[-1]
             for coluna, valor in enumerate(nota):
-                print(coluna, valor)
                 item = QTableWidgetItem(str(valor))
                 item.setBackground(QColor(self.categorias[categoria]['cor']))
                 self.tabela_nota.setItem(linha, coluna, item)
 
     def is_campos_vazios(self):
         return self.txt_titulo_nota.text() == '' \
-            and self.txt_nota.toPlainText() == '' \
-            and self.cb_categoria.currentText() == 'Não Informado'
+            or self.txt_nota.toPlainText() == '' \
+            or self.cb_categoria.currentText() == 'Não Informado'
 
     @staticmethod
     def pegar_nome_categorias():

@@ -29,7 +29,6 @@ class NotaDAO:
         try:
             os.chdir('../bd/')
             self.connection = sqlite3.connect(self.db_name)
-            print('conectei')
         except sqlite3.Error as e:
             print(e)
 
@@ -42,8 +41,6 @@ class NotaDAO:
     def registrar_nota(self, nota):
         campos_nota = tuple(vars(nota).keys())[1:]
         valores_nota = [nota.nome, nota.texto, nota.categoria_id]
-        print(valores_nota)
-        print(campos_nota)
 
         try:
             self.connect()
