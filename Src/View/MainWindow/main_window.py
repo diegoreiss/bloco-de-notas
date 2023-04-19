@@ -119,6 +119,10 @@ class MainWindow(QMainWindow):
         self.txt_titulo_nota.setText(self.tabela_nota.item(row, 1).text())
         self.txt_nota.setText(self.tabela_nota.item(row, 3).text())
 
+        categorias_dict = {v: i+1 for i, v in enumerate(self.categorias)}
+        categoria = self.tabela_nota.item(row, 5).text()
+        self.cb_categoria.setCurrentIndex(categorias_dict[categoria])
+
         self.btn_atualizar.setVisible(True)
         self.btn_remover.setVisible(True)
         self.btn_salvar.setVisible(False)
@@ -132,9 +136,7 @@ class MainWindow(QMainWindow):
         self.btn_voltar.setVisible(False)
 
     def salvar_nota(self):
-        if self.txt_titulo_nota.text() != '' \
-                and self.txt_nota.toPlainText() != '' \
-                and self.cb_categoria.currentText() != 'Não Informado':
+        if not self.is_campos_vazios():
             nota_dao = NotaDAO()
 
             retorno = nota_dao.registrar_nota(self.nota)
@@ -149,18 +151,22 @@ class MainWindow(QMainWindow):
             MsgInfo('critical', 'Salvar Cliente', 'Não é aceito campos vazios!\nPreencha Novamente')
 
     def atualizar_nota(self):
-        self.nota.id = int(self.nota.id)
-        nota_dao = NotaDAO()
 
-        retorno = nota_dao.atualizar_nota(self.nota)
+        if not self.is_campos_vazios():
+            self.nota.id = int(self.nota.id)
+            nota_dao = NotaDAO()
 
-        if retorno == 'updated':
-            MsgInfo('info', 'Atualizar', 'A nota foi atualizada com sucesso!')
-            self.popular_table_nota()
-            self.limpar_campos()
-            self.voltar()
+            retorno = nota_dao.atualizar_nota(self.nota)
+
+            if retorno == 'updated':
+                MsgInfo('info', 'Atualizar', 'A nota foi atualizada com sucesso!')
+                self.popular_table_nota()
+                self.limpar_campos()
+                self.voltar()
+            else:
+                print(retorno)
         else:
-            print(retorno)
+            MsgInfo('critical', 'Salvar Cliente', 'Não é aceito campos vazios!\nPreencha Novamente')
 
     def remover_nota(self):
         self.nota.id = int(self.nota.id)
@@ -194,6 +200,11 @@ class MainWindow(QMainWindow):
                 item = QTableWidgetItem(str(valor))
                 item.setBackground(QColor(self.categorias[categoria]['cor']))
                 self.tabela_nota.setItem(linha, coluna, item)
+
+    def is_campos_vazios(self):
+        return self.txt_titulo_nota.text() == '' \
+            and self.txt_nota.toPlainText() == '' \
+            and self.cb_categoria.currentText() == 'Não Informado'
 
     @staticmethod
     def pegar_nome_categorias():
