@@ -3,7 +3,8 @@ from PySide6.QtWidgets import \
     QTextEdit, QPushButton, QVBoxLayout, \
     QWidget, QSizePolicy, QTableWidget, \
     QAbstractItemView, QTableWidgetItem, QComboBox
-from PySide6.QtGui import QColor
+from PySide6.QtGui import \
+    QColor, QIcon
 
 from Src.Model.nota import Nota
 from Src.Controller.nota_DAO import NotaDAO
@@ -15,6 +16,8 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setMinimumSize(450, 500)
+        app_icon = QIcon('../img/notas.png')
+        self.setWindowIcon(app_icon)
         self.setWindowTitle('Notas')
 
         self.lbl_id = QLabel('Id')
@@ -31,14 +34,15 @@ class MainWindow(QMainWindow):
 
         self.lbl_categoria = QLabel('Categoria:')
         self.cb_categoria = QComboBox()
-        self.cb_categoria.addItems(self.pegar_categorias())
+        self.cb_categoria.addItems(self.pegar_nome_categorias())
 
         self.lbl_tabela_nota = QLabel('Notas Cadastradas:')
         self.tabela_nota = QTableWidget()
-        self.tabela_nota.setColumnCount(5)
+        self.tabela_nota.setColumnCount(6)
         self.tabela_nota.setHorizontalHeaderLabels([
-            'Id', 'Nome', 'Data', 'Texto', 'Last Update'
+            'Id', 'Nome', 'Data', 'Texto', 'Last Update', 'Categoria'
         ])
+        self.tabela_nota.verticalHeader().setVisible(False)
         self.tabela_nota.setSelectionMode(QAbstractItemView.NoSelection)
         self.tabela_nota.setEditTriggers(QAbstractItemView.NoEditTriggers)
 
@@ -74,10 +78,12 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.container)
         self.container.setLayout(layout)
 
-        self.popular_table_nota()
+        self.nota = Nota()
+        self.categorias = {tupla[1]: {'id': tupla[0], 'cor': tupla[2]} for tupla in self.pegar_todas_categorias()}
 
         self.txt_titulo_nota.textChanged.connect(self.on_change)
         self.txt_nota.textChanged.connect(self.on_change)
+        self.cb_categoria.currentTextChanged.connect(self.on_change)
 
         self.btn_salvar.clicked.connect(self.salvar_nota)
         self.btn_atualizar.clicked.connect(self.atualizar_nota)
@@ -85,12 +91,17 @@ class MainWindow(QMainWindow):
         self.tabela_nota.cellDoubleClicked.connect(self.carrega_dados)
         self.btn_voltar.clicked.connect(self.voltar)
 
-        self.nota = Nota()
+        self.popular_table_nota()
 
     def on_change(self):
         self.nota.id = self.txt_id.text()
         self.nota.nome = self.txt_titulo_nota.text()
         self.nota.texto = self.txt_nota.toPlainText()
+
+        if self.cb_categoria.currentText() != 'Não Informado':
+            self.nota.categoria_id = self.categorias[self.cb_categoria.currentText()]['id']
+        else:
+            self.nota.categoria_id = None
 
         print(self.nota.__dict__)
 
@@ -100,6 +111,8 @@ class MainWindow(QMainWindow):
                 widget.clear()
             elif isinstance(widget, QTextEdit):
                 widget.clear()
+            elif isinstance(widget, QComboBox):
+                widget.setCurrentIndex(0)
 
     def carrega_dados(self, row, column):
         self.txt_id.setText(self.tabela_nota.item(row, 0).text())
@@ -119,16 +132,21 @@ class MainWindow(QMainWindow):
         self.btn_voltar.setVisible(False)
 
     def salvar_nota(self):
-        nota_dao = NotaDAO()
+        if self.txt_titulo_nota.text() != '' \
+                and self.txt_nota.toPlainText() != '' \
+                and self.cb_categoria.currentText() != 'Não Informado':
+            nota_dao = NotaDAO()
 
-        retorno = nota_dao.registrar_nota(self.nota)
+            retorno = nota_dao.registrar_nota(self.nota)
 
-        if retorno == 'inserted':
-            MsgInfo('info', 'Cadastro Realizado', 'Cadastro realizado com sucesso!')
-            self.popular_table_nota()
-            self.limpar_campos()
+            if retorno == 'inserted':
+                MsgInfo('info', 'Cadastro Realizado', 'Cadastro realizado com sucesso!')
+                self.popular_table_nota()
+                self.limpar_campos()
+            else:
+                print(retorno)
         else:
-            print(retorno)
+            MsgInfo('critical', 'Salvar Cliente', 'Não é aceito campos vazios!\nPreencha Novamente')
 
     def atualizar_nota(self):
         self.nota.id = int(self.nota.id)
@@ -158,24 +176,39 @@ class MainWindow(QMainWindow):
         else:
             print(retorno)
 
-    def pegar_categorias(self):
-        nota_dao = NotaDAO()
-
-        categorias = ['Não Informado']
-
-        categorias += [j for i in nota_dao.consultar_todas_categorias() for j in i]
-
-        return categorias
-
     def popular_table_nota(self):
         self.tabela_nota.setRowCount(0)
 
         nota_dao = NotaDAO()
         lista_notas = nota_dao.consultar_todas_notas()
 
+        for tupla in lista_notas:
+            print(self.categorias[tupla[-1]]['cor'])
+
         self.tabela_nota.setRowCount(len(lista_notas))
 
         for linha, nota in enumerate(lista_notas):
+            categoria = nota[-1]
             for coluna, valor in enumerate(nota):
-                self.tabela_nota.setItem(linha, coluna, QTableWidgetItem(str(valor)))
+                print(coluna, valor)
+                item = QTableWidgetItem(str(valor))
+                item.setBackground(QColor(self.categorias[categoria]['cor']))
+                self.tabela_nota.setItem(linha, coluna, item)
 
+    @staticmethod
+    def pegar_nome_categorias():
+        nota_dao = NotaDAO()
+
+        categorias = ['Não Informado']
+
+        categorias += [j for i in nota_dao.consultar_nome_categoria() for j in i]
+
+        return categorias
+
+    @staticmethod
+    def pegar_todas_categorias():
+        nota_dao = NotaDAO()
+
+        retorno = nota_dao.consultar_todas_categorias()
+
+        return retorno

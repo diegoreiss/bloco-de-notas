@@ -41,8 +41,9 @@ class NotaDAO:
 
     def registrar_nota(self, nota):
         campos_nota = tuple(vars(nota).keys())[1:]
-        valores_nota = tuple(filter(lambda x: x is not None and x != '', vars(nota).values()))
+        valores_nota = [nota.nome, nota.texto, nota.categoria_id]
         print(valores_nota)
+        print(campos_nota)
 
         try:
             self.connect()
@@ -51,7 +52,7 @@ class NotaDAO:
             script = f"""
                 INSERT INTO 
                     nota {campos_nota}
-                VALUES (?, date('now'), ?);
+                VALUES (?, date('now'), ?, ?);
             """
 
             cursor.execute(script, valores_nota)
@@ -117,13 +118,17 @@ class NotaDAO:
 
         script = f"""
             SELECT 
-                id, 
-                nome,
-                strftime('%d/%m/%Y', data),
-                texto,
-                strftime('%d/%m/%Y %H:%M:%S', last_update)
+                n.id, 
+                n.nome,
+                strftime('%d/%m/%Y', n.data),
+                n.texto,
+                strftime('%d/%m/%Y %H:%M:%S', n.last_update),
+                c.nome
             FROM
-            nota;
+                nota n
+            INNER JOIN categoria c
+            ON 
+                n.categoria_id = c.id;
         """
 
         try:
@@ -139,7 +144,7 @@ class NotaDAO:
         finally:
             self.close_connection()
 
-    def consultar_todas_categorias(self):
+    def consultar_nome_categoria(self):
         try:
             self.connect()
             cursor = self.connection.cursor()
@@ -159,4 +164,23 @@ class NotaDAO:
         finally:
             self.close_connection()
 
+    def consultar_todas_categorias(self):
+        try:
+            self.connect()
+            cursor = self.connection.cursor()
 
+            script = f"""
+                SELECT 
+                    *
+                FROM
+                    categoria;
+            """
+
+            cursor.execute(script)
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            return e
+        except BaseException as e:
+            return e
+        finally:
+            self.close_connection()
