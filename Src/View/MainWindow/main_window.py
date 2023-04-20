@@ -48,6 +48,8 @@ class MainWindow(QMainWindow):
 
         self.btn_salvar = QPushButton('Salvar')
 
+        self.btn_limpar = QPushButton('Limpar')
+
         self.btn_atualizar = QPushButton('Atualizar')
         self.btn_atualizar.setVisible(False)
 
@@ -69,6 +71,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.lbl_tabela_nota)
         layout.addWidget(self.tabela_nota)
         layout.addWidget(self.btn_salvar)
+        layout.addWidget(self.btn_limpar)
         layout.addWidget(self.btn_atualizar)
         layout.addWidget(self.btn_remover)
         layout.addWidget(self.btn_voltar)
@@ -86,6 +89,7 @@ class MainWindow(QMainWindow):
         self.cb_categoria.currentTextChanged.connect(self.on_change)
 
         self.btn_salvar.clicked.connect(self.salvar_nota)
+        self.btn_limpar.clicked.connect(self.limpar_campos)
         self.btn_atualizar.clicked.connect(self.atualizar_nota)
         self.btn_remover.clicked.connect(self.remover_nota)
         self.tabela_nota.cellDoubleClicked.connect(self.carrega_dados)
@@ -93,7 +97,15 @@ class MainWindow(QMainWindow):
 
         self.popular_table_nota()
 
+        self.btn_limpar.setEnabled(False)
+
     def on_change(self):
+
+        if not self.is_campos_vazios():
+            self.btn_limpar.setEnabled(True)
+        else:
+            self.btn_limpar.setEnabled(False)
+
         self.nota.id = self.txt_id.text()
         self.nota.nome = self.txt_titulo_nota.text()
         self.nota.texto = self.txt_nota.toPlainText()
@@ -125,6 +137,7 @@ class MainWindow(QMainWindow):
         self.btn_remover.setVisible(True)
         self.btn_salvar.setVisible(False)
         self.btn_voltar.setVisible(True)
+        self.btn_limpar.setVisible(False)
 
     def voltar(self):
         self.limpar_campos()
